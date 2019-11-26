@@ -28,7 +28,31 @@ namespace ConsoleJacketsAPI.Controllers.V1
             {
                 return Ok(recent);
             }
-            return Ok(new List<Jacket> { new Jacket { Id = 0, JacketID = null, JacketOwner = null, Location = null } });
+            return Ok(
+                    new List<Jacket> 
+                    { 
+                        new Jacket 
+                        { 
+                            Id = 0, 
+                            JacketID = null, 
+                            JacketOwner = null, 
+                            Location = null 
+                        },
+                        new Jacket
+                        {
+                            Id = 0,
+                            JacketID = null,
+                            JacketOwner = null,
+                            Location = null
+                        },
+                        new Jacket
+                        {
+                            Id = 0,
+                            JacketID = null,
+                            JacketOwner = null,
+                            Location = null
+                        }
+                    });
         }
 
         [HttpGet(ApiRoutes.Jackets.GetById)]
@@ -64,6 +88,14 @@ namespace ConsoleJacketsAPI.Controllers.V1
                 }
                 
             }
+
+            remaining.Count = 5000 - count;
+            if(remaining.Count <= 0)
+            {
+                remaining.Count = 0;
+                return Ok(remaining);
+            }
+
             remaining.Count = 9999;
             return Ok(remaining);
         }
@@ -71,9 +103,16 @@ namespace ConsoleJacketsAPI.Controllers.V1
         [HttpPost(ApiRoutes.Jackets.Upload)]
         public async Task<IActionResult> Upload([FromBody] JacketUploadRequest jacketUploadRequest)
         {
+            var response = new JacketUploadResponse();
+            var count = await _jacketService.GetCountAsync();
+            if(count == 5000)
+            {
+                response = new JacketUploadResponse { Error = true, Message = "All 5000 Jackets Assigned" };
+                return Ok(response);
+            }
+
             var jacket = new Jacket();
             var secret = "";
-            var response = new JacketUploadResponse();
 
             if (jacketUploadRequest != null)
             {
