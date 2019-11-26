@@ -38,7 +38,7 @@ namespace ConsoleJacketsAPI
                     Configuration.GetConnectionString("DefaultConnection")));
             services.AddDefaultIdentity<IdentityUser>()
                 .AddEntityFrameworkStores<DataContext>();
-            services.AddSingleton<IJacketService, JacketService>();
+            services.AddScoped<IJacketService, JacketService>();
 
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
 

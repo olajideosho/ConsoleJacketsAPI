@@ -8,10 +8,14 @@ namespace ConsoleJacketsAPI.Services
 {
     public interface IJacketService
     {
-        List<Jacket> GetRecentJackets();
+        Task<List<Jacket>> GetRecentJacketsAsync();
 
-        List<Jacket> GetJackets();
+        Task<List<Jacket>> GetJacketsAsync();
 
-        Jacket GetJacketById(string jacketId);
+        Task<bool> UploadAsync(Jacket jacket);
+
+        Task<Jacket> GetJacketByIdAsync(string jacketId);
+
+        Task<int> GetCountAsync();
     }
 }

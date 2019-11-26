@@ -21,9 +21,9 @@ namespace ConsoleJacketsAPI.Controllers.V1
         }
 
         [HttpGet(ApiRoutes.Jackets.GetRecent)]
-        public IActionResult GetRecentJackets()
+        public async Task<IActionResult> GetRecentJackets()
         {
-            var recent = _jacketService.GetRecentJackets();
+            var recent = await _jacketService.GetRecentJacketsAsync();
             if (recent != null)
             {
                 return Ok(recent);
@@ -32,9 +32,9 @@ namespace ConsoleJacketsAPI.Controllers.V1
         }
 
         [HttpGet(ApiRoutes.Jackets.GetById)]
-        public IActionResult GetJacketById([FromRoute] string jacketId)
+        public async Task<IActionResult> GetJacketById([FromRoute] string jacketId)
         {
-            var jacket = _jacketService.GetJacketById(jacketId);
+            var jacket = await _jacketService.GetJacketByIdAsync(jacketId);
 
             if(jacket == null)
             {
@@ -46,9 +46,9 @@ namespace ConsoleJacketsAPI.Controllers.V1
         }
 
         [HttpGet(ApiRoutes.Jackets.GetCount)]
-        public IActionResult GetRemainingCount()
+        public async Task<IActionResult> GetRemainingCount()
         {
-            var count = _jacketService.GetJackets().Count();
+            var count = await _jacketService.GetCountAsync();
             var remaining = new JacketsRemainingResponse();
             if(count > 0)
             {
@@ -69,7 +69,7 @@ namespace ConsoleJacketsAPI.Controllers.V1
         }
 
         [HttpPost(ApiRoutes.Jackets.Upload)]
-        public IActionResult Upload([FromBody] JacketUploadRequest jacketUploadRequest)
+        public async Task<IActionResult> Upload([FromBody] JacketUploadRequest jacketUploadRequest)
         {
             var jacket = new Jacket();
             var secret = "";
@@ -79,7 +79,7 @@ namespace ConsoleJacketsAPI.Controllers.V1
             {
                 jacket = new Jacket
                 {
-                    Id = jacketUploadRequest.IndexId,
+                    //Id = jacketUploadRequest.IndexId,
                     JacketOwner = jacketUploadRequest.Owner,
                     JacketID = jacketUploadRequest.ID,
                     Location = jacketUploadRequest.Country
@@ -92,27 +92,35 @@ namespace ConsoleJacketsAPI.Controllers.V1
                 return Ok(response);
             }
 
-            var exists = _jacketService.GetJacketById(jacket.JacketID);
+            var exists = await _jacketService.GetJacketByIdAsync(jacket.JacketID);
             if(exists != null)
             {
                 response = new JacketUploadResponse { Error = true, Message = "Jacket Already Assigned" };
                 return Ok(response);
             }
             
-            if(jacket.Id == 0)
-            {
-                jacket.Id = _jacketService.GetJackets().Count + 1;
-            }
+            //if(jacket.Id == 0)
+            //{
+              //  jacket.Id = (await _jacketService.GetCountAsync()) + 1;
+            //}
 
             var secretPass = SecretCheck.IsValid(jacket.JacketID, secret);
             var locationUri = "";
             if (secretPass)
             {
-                _jacketService.GetJackets().Add(jacket);
+                var uploaded = await _jacketService.UploadAsync(jacket);
 
-                var baseUrl = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host.ToUriComponent()}";
-                locationUri = baseUrl + "/" + ApiRoutes.Jackets.GetById.Replace("{jacketId}", jacket.Id.ToString());
-                response = new JacketUploadResponse { Error = false, Message = "Jacket Upload Successful" };
+                if (uploaded)
+                {
+                    var baseUrl = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host.ToUriComponent()}";
+                    locationUri = baseUrl + "/" + ApiRoutes.Jackets.GetById.Replace("{jacketId}", jacket.Id.ToString());
+                    response = new JacketUploadResponse { Error = false, Message = "Jacket Upload Successful" };
+                }
+                else
+                {
+                    response = new JacketUploadResponse { Error = true, Message = "Something went wrong" };
+                }
+                
             }
             else
             {

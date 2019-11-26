@@ -2,69 +2,47 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using ConsoleJacketsAPI.Data;
 using ConsoleJacketsAPI.Domain;
+using Microsoft.EntityFrameworkCore;
 
 namespace ConsoleJacketsAPI.Services
 {
     public class JacketService : IJacketService
     {
-        private readonly List<Jacket> _jackets;
+        private readonly DataContext _dataContext;
 
-        public JacketService()
+        public JacketService(DataContext dataContext)
         {
-            _jackets = new List<Jacket>()
-            {
-                new Jacket
-                {
-                    Id = 1,
-                    JacketOwner = "Lui Han Peng",
-                    JacketID = "AZRX",
-                    Location = "Japan"
-                },
-                new Jacket
-                {
-                    Id = 2,
-                    JacketOwner = "Ayodeji Adedipe",
-                    JacketID = "AZEF",
-                    Location = "Nigeria"
-                },
-                new Jacket
-                {
-                    Id = 3,
-                    JacketOwner = "Simon Arslan",
-                    JacketID = "QHRT",
-                    Location = "USA"
-                },
-                new Jacket
-                {
-                    Id = 4,
-                    JacketOwner = "Pagoda Chan",
-                    JacketID = "OPLL",
-                    Location = "China"
-                },
-                new Jacket
-                {
-                    Id = 5,
-                    JacketOwner = "Feyi Quan Chu",
-                    JacketID = "FFIP",
-                    Location = "Germany"
-                }
-            };
+            _dataContext = dataContext;
         }
 
-        public Jacket GetJacketById(string jacketId)
+        public async Task<int> GetCountAsync()
         {
-            return _jackets.SingleOrDefault(x => x.JacketID == jacketId);
+            return await _dataContext.Jackets.CountAsync();
         }
 
-        public List<Jacket> GetJackets()
+        public async Task<Jacket> GetJacketByIdAsync(string jacketId)
         {
-            return _jackets;
+            return await _dataContext.Jackets.SingleOrDefaultAsync(x => x.JacketID == jacketId);
         }
 
-        public List<Jacket> GetRecentJackets()
+        public async Task<List<Jacket>> GetJacketsAsync()
         {
-            return _jackets.TakeLast(3).Reverse().ToList();
+            return await _dataContext.Jackets.ToListAsync();
+        }
+
+        public async Task<List<Jacket>> GetRecentJacketsAsync()
+        {
+            //return await _dataContext.Jackets.TakeLast(3).Reverse().ToListAsync();
+            return await _dataContext.Jackets.OrderByDescending(j => j.Id).Take(3).ToListAsync();
+        }
+
+        public async Task<bool> UploadAsync(Jacket jacket)
+        {
+            await _dataContext.Jackets.AddAsync(jacket);
+            var uploaded = await _dataContext.SaveChangesAsync();
+            return uploaded > 0;
         }
     }
 }
